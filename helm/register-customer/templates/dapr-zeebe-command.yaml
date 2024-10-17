@@ -1,0 +1,16 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: dapr-zeebe-command
+spec:
+  type: bindings.zeebe.command
+  version: v1
+  metadata:
+    - name: gatewayAddr
+      value: "camunda-platform-zeebe-gateway.camunda-platform.svc.cluster.local:26500"
+    - name: gatewayKeepAlive
+      value: "45s"
+    - name: usePlainTextConnection
+      value: "true"
+    - name: caCertificatePath
+      value: "/tmp/certificates"

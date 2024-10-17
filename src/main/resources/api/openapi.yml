@@ -1,0 +1,1173 @@
+openapi: 3.1.0
+info:
+  license:
+    name: Cardif
+    url: https://onecop-api.echonet
+  version: 0.0.8
+  title: Quotation service
+  description: This is Quotation service API description
+servers:
+  - url: https://onecop-api.echonet
+paths:
+  /v1/prospects:
+    post:
+      summary: Create new prospect
+      operationId: newProspect
+      description: Create new prospect
+      security:
+        - BasicAuth: []
+      tags:
+        - Prospect
+      parameters:
+        - $ref: '#/components/parameters/X-Correlation-Id'
+        - $ref: '#/components/parameters/Partner'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProspectRequest'
+      responses:
+        '200':
+          description: Prospect already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProspectResponse'
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProspectResponse'
+        '400':
+          description: invalid input, object invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                MissingPartnerCode:
+                  $ref: '#/components/examples/MissingPartnerCode'
+                MissingX-Correlation-Id:
+                  $ref: '#/components/examples/MissingX-Correlation-Id'
+  /v1/prospects/{prospectId}/quotations/{quotationId}:
+    get:
+      summary: Get quotation by prospect ID and quotation ID
+      operationId: getProspectQuotation
+      description: Get quotation by prospect ID and quotation ID
+      security:
+        - BasicAuth: []
+      tags:
+        - Quotation
+      parameters:
+        - in: path
+          name: prospectId
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/ID'
+        - in: path
+          name: quotationId
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/ID'
+        - $ref: '#/components/parameters/X-Correlation-Id'
+        - $ref: '#/components/parameters/Partner'
+      responses:
+        '200':
+          description: Found
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NonBindingQuotationResponse'
+                  - $ref: '#/components/schemas/BindingQuotationResponse'
+        '400':
+          description: invalid input, object invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                MissingPartnerCode:
+                  $ref: '#/components/examples/MissingPartnerCode'
+                MissingX-Correlation-Id:
+                  $ref: '#/components/examples/MissingX-Correlation-Id'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                NotFound:
+                  $ref: '#/components/examples/NotFound'
+  /v1/prospects/{prospectId}/quotations:
+    post:
+      summary: Generate quotation
+      operationId: generateQuotation
+      description: Generate either nonbinding or binding quotation. Binding quotation has nonbindinding quotation as pre-requisite
+      security:
+        - BasicAuth: []
+      parameters:
+        - in: path
+          name: prospectId
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/ID'
+        - $ref: '#/components/parameters/X-Correlation-Id'
+        - $ref: '#/components/parameters/Partner'
+      tags:
+        - Quotation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/NonBindingQuotationRequest'
+                - $ref: '#/components/schemas/BindingQuotationStagedRequest'
+                - $ref: '#/components/schemas/BindingQuotationDirectRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NonBindingQuotationResponse'
+                  - $ref: '#/components/schemas/BindingQuotationResponse'
+        '400':
+          description: invalid input, object invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                MissingPartnerCode:
+                  $ref: '#/components/examples/MissingPartnerCode'
+                MissingX-Correlation-Id:
+                  $ref: '#/components/examples/MissingX-Correlation-Id'
+                MissingRequiredAttribute:
+                  $ref: '#/components/examples/MissingRequiredAttribute'
+  /v1/quotations/{compositeId}:
+    get:
+      summary: Get quotation by composite ID
+      operationId: getQuotation
+      description: Get quotation by composite ID
+      security:
+        - BasicAuth: []
+      tags:
+        - Quotation
+      parameters:
+        - in: path
+          name: compositeId
+          description: contains composite id created from prospectId and quotationId separated by _
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CompositeID'
+        - $ref: '#/components/parameters/X-Correlation-Id'
+        - $ref: '#/components/parameters/Partner'
+      responses:
+        '200':
+          description: Found
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NonBindingQuotationResponse'
+                  - $ref: '#/components/schemas/BindingQuotationResponse'
+        '400':
+          description: invalid input, object invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                MissingPartnerCode:
+                  $ref: '#/components/examples/MissingPartnerCode'
+                MissingX-Correlation-Id:
+                  $ref: '#/components/examples/MissingX-Correlation-Id'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                NotFound:
+                  $ref: '#/components/examples/NotFound'
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      examples:
+        - 155e4567-a11b-42b3-a456-5c6ab2440e93
+    Date:
+      description: Timestamp (yyyy-MM-dd)
+      type: string
+      format: date
+      examples:
+        - '2022-06-15'
+    Gender:
+      enum:
+        - MALE
+        - FEMALE
+        - OTHER
+        - N/A
+      type: string
+    HeightUnit:
+      type: string
+      enum:
+        - CM
+        - M
+    WeightUnit:
+      type: string
+      enum:
+        - KG
+        - G
+    Currency:
+      type: string
+      format: iso-4217
+      pattern: ^AED|AFN|ALL|AMD|ANG|AOA|ARS|AUD|AWG|AZN|BAM|BBD|BDT|BGN|BHD|BIF|BMD|BND|BOB|BRL|BSD|BTN|BWP|BYR|BZD|CAD|CDF|CHF|CLP|CNY|COP|CRC|CUC|CUP|CVE|CZK|DJF|DKK|DOP|DZD|EGP|ERN|ETB|EUR|FJD|FKP|GBP|GEL|GGP|GHS|GIP|GMD|GNF|GTQ|GYD|HKD|HNL|HRK|HTG|HUF|IDR|ILS|IMP|INR|IQD|IRR|ISK|JEP|JMD|JOD|JPY|KES|KGS|KHR|KMF|KPW|KRW|KWD|KYD|KZT|LAK|LBP|LKR|LRD|LSL|LYD|MAD|MDL|MGA|MKD|MMK|MNT|MOP|MRO|MUR|MVR|MWK|MXN|MYR|MZN|NAD|NGN|NIO|NOK|NPR|NZD|OMR|PAB|PEN|PGK|PHP|PKR|PLN|PYG|QAR|RON|RSD|RUB|RWF|SAR|SBD|SCR|SDG|SEK|SGD|SHP|SLL|SOS|SPL|SRD|STD|SVC|SYP|SZL|THB|TJS|TMT|TND|TOP|TRY|TTD|TVD|TWD|TZS|UAH|UGX|USD|UYU|UZS|VEF|VND|VUV|WST|XAF|XCD|XDR|XOF|XPF|YER|ZAR|ZMW|ZWD$
+      examples:
+        - CZK
+    Money:
+      type: object
+      properties:
+        value:
+          type: number
+        currency:
+          $ref: '#/components/schemas/Currency'
+      required:
+        - value
+        - currency
+    EmploymentSituation:
+      type: object
+      description: person's employment/occupation details
+      properties:
+        occupation:
+          type: string
+          example: Lagerist/in
+        occupationCategory:
+          type: string
+          example: A
+        occupationCluster:
+          type: string
+          description: Type of occupation cluster
+          enum:
+            - FEUERWEHR
+            - KAMERAMANN
+            - POLIZEI
+            - N/A
+        occupationId:
+          type: string
+          example: ocu123
+        netSalaryAmount:
+          $ref: '#/components/schemas/Money'
+    SmokingIndicator:
+      type: boolean
+      example: true
+      description: If true then the prospect is a smoker, if false then the prospect is a nonsmoker
+    DurationUnit:
+      type: string
+      enum:
+        - YEAR
+        - MONTH
+        - DAY
+    SmokingAbstinenceDuration:
+      type: object
+      properties:
+        value:
+          type: integer
+          description: Information how long the prospect is non smoking in duration value. If the prospect has never smoked then there is an empty value.
+          minimum: 0
+          maximum: 40000
+        unit:
+          $ref: '#/components/schemas/DurationUnit'
+    ConsentType:
+      type: string
+      enum:
+        - WITH_PERSONAL_DATA_PROCESSING
+        - WITH_HEALTH_DATA_PROCESSING
+    PersonIndividual:
+      type: object
+      properties:
+        birthDate:
+          $ref: '#/components/schemas/Date'
+        gender:
+          $ref: '#/components/schemas/Gender'
+        height:
+          type: number
+          example: 195
+          description: height value
+        heightUnit:
+          $ref: '#/components/schemas/HeightUnit'
+        weight:
+          type: number
+          example: 84
+          description: weight value
+        weightUnit:
+          $ref: '#/components/schemas/WeightUnit'
+        employmentSituation:
+          $ref: '#/components/schemas/EmploymentSituation'
+        smokingIndicator:
+          $ref: '#/components/schemas/SmokingIndicator'
+        smokingAbstinenceDuration:
+          $ref: '#/components/schemas/SmokingAbstinenceDuration'
+        consents:
+          type: array
+          items:
+            type: object
+            properties:
+              consentType:
+                $ref: '#/components/schemas/ConsentType'
+              consentProvided:
+                type: boolean
+    LifestyleQA:
+      type: object
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+    Frequency:
+      type: string
+      description: repeating frequency
+      enum:
+        - SINGLE
+        - MONTHLY
+        - QUARTERLY
+        - YEARLY
+    Installment:
+      type: object
+      properties:
+        frequency:
+          $ref: '#/components/schemas/Frequency'
+        amount:
+          $ref: '#/components/schemas/Money'
+    Type:
+      type: string
+      enum:
+        - MOTCRED
+        - LEASCRED
+        - MORTCRED
+        - PERSCRED
+        - REVOCRED
+        - OTHPOSS
+      examples:
+        - PERSCRED
+    UnitCode:
+      type: string
+      enum:
+        - YEAR
+        - MONTH
+        - DAY
+    Duration:
+      type: object
+      properties:
+        value:
+          type: integer
+        unit:
+          $ref: '#/components/schemas/UnitCode'
+    Loan:
+      type: object
+      properties:
+        amount:
+          $ref: '#/components/schemas/Money'
+        installment:
+          $ref: '#/components/schemas/Installment'
+        startDate:
+          $ref: '#/components/schemas/Date'
+        endDate:
+          $ref: '#/components/schemas/Date'
+        type:
+          $ref: '#/components/schemas/Type'
+        externalId:
+          type: string
+          examples:
+            - c24b31a8ed2b53a3a64
+        approvalDate:
+          $ref: '#/components/schemas/Date'
+        nominalInterestRate:
+          type: number
+        initialRepaymentRate:
+          type: number
+        duration:
+          $ref: '#/components/schemas/Duration'
+    UnderlyingProduct:
+      type: object
+      properties:
+        loan:
+          $ref: '#/components/schemas/Loan'
+    ProspectRequestEntity:
+      type: object
+      properties:
+        caseId:
+          type: string
+        personIndividual:
+          $ref: '#/components/schemas/PersonIndividual'
+        lifestyleQuestionsAndAnswers:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifestyleQA'
+        underlyingProducts:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnderlyingProduct'
+    Provider:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Unique user friendly code
+        name:
+          type: string
+          description: Display name of provider
+    PersonLegalEntity:
+      type: object
+      properties:
+        companyName:
+          type: string
+    PersonAdditionalIdentifier:
+      type: object
+      properties:
+        identifier:
+          type: string
+    License:
+      type: object
+      properties:
+        licenseCode:
+          type: string
+        licenseType:
+          type: string
+        validFrom:
+          $ref: '#/components/schemas/Date'
+    Partner:
+      type: object
+      properties:
+        code:
+          type: string
+        personLegalEntity:
+          $ref: '#/components/schemas/PersonLegalEntity'
+        personAdditionalIdentifier:
+          $ref: '#/components/schemas/PersonAdditionalIdentifier'
+        licenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/License'
+    Advisor:
+      type: object
+      properties:
+        personAdditionalIdentifier:
+          $ref: '#/components/schemas/PersonAdditionalIdentifier'
+        licensed:
+          type: boolean
+        licenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/License'
+    ProspectRequest:
+      type: object
+      properties:
+        prospect:
+          $ref: '#/components/schemas/ProspectRequestEntity'
+        provider:
+          $ref: '#/components/schemas/Provider'
+        partner:
+          $ref: '#/components/schemas/Partner'
+        advisor:
+          $ref: '#/components/schemas/Advisor'
+    ID:
+      type: string
+      examples:
+        - P-F8AC51636C
+        - Q-ABAC51636C
+      pattern: ^[A-Z]{1}-[0-9A-F]{10}$
+      description: unique id
+    ProspectResponseEntity:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ID'
+        caseId:
+          type: string
+        personIndividual:
+          $ref: '#/components/schemas/PersonIndividual'
+        lifestyleQuestionsAndAnswers:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifestyleQA'
+        underlyingProducts:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnderlyingProduct'
+    ProspectResponse:
+      type: object
+      properties:
+        prospect:
+          $ref: '#/components/schemas/ProspectResponseEntity'
+        provider:
+          $ref: '#/components/schemas/Provider'
+        partner:
+          $ref: '#/components/schemas/Partner'
+        advisor:
+          $ref: '#/components/schemas/Advisor'
+    HttpStatus:
+      description: The HTTP status
+      type: string
+      enum:
+        - CONTINUE
+        - SWITCHING_PROTOCOLS
+        - PROCESSING
+        - OK
+        - CREATED
+        - ACCEPTED
+        - NON_AUTHORITATIVE_INFORMATION
+        - NO_CONTENT
+        - RESET_CONTENT
+        - PARTIAL_CONTENT
+        - MULTI_STATUS
+        - ALREADY_IMPORTED
+        - IM_USED
+        - MULTIPLE_CHOICES
+        - MOVED_PERMANENTLY
+        - FOUND
+        - SEE_OTHER
+        - NOT_MODIFIED
+        - USE_PROXY
+        - SWITCH_PROXY
+        - TEMPORARY_REDIRECT
+        - PERMANENT_REDIRECT
+        - BAD_REQUEST
+        - UNAUTHORIZED
+        - PAYMENT_REQUIRED
+        - FORBIDDEN
+        - NOT_FOUND
+        - METHOD_NOT_ALLOWED
+        - NOT_ACCEPTABLE
+        - PROXY_AUTHENTICATION_REQUIRED
+        - REQUEST_TIMEOUT
+        - CONFLICT
+        - GONE
+        - LENGTH_REQUIRED
+        - PRECONDITION_FAILED
+        - REQUEST_ENTITY_TOO_LARGE
+        - REQUEST_URI_TOO_LONG
+        - UNSUPPORTED_MEDIA_TYPE
+        - REQUESTED_RANGE_NOT_SATISFIABLE
+        - EXPECTATION_FAILED
+        - I_AM_A_TEAPOT
+        - ENHANCE_YOUR_CALM
+        - UNPROCESSABLE_ENTITY
+        - LOCKED
+        - FAILED_DEPENDENCY
+        - UNORDERED_COLLECTION
+        - UPGRADE_REQUIRED
+        - PRECONDITION_REQUIRED
+        - TOO_MANY_REQUESTS
+        - REQUEST_HEADER_FIELDS_TOO_LARGE
+        - NO_RESPONSE
+        - BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS
+        - UNAVAILABLE_FOR_LEGAL_REASONS
+        - REQUEST_HEADER_TOO_LARGE
+        - INTERNAL_SERVER_ERROR
+        - NOT_IMPLEMENTED
+        - BAD_GATEWAY
+        - SERVICE_UNAVAILABLE
+        - GATEWAY_TIMEOUT
+        - HTTP_VERSION_NOT_SUPPORTED
+        - VARIANT_ALSO_NEGOTIATES
+        - INSUFFICIENT_STORAGE
+        - LOOP_DETECTED
+        - BANDWIDTH_LIMIT_EXCEEDED
+        - NOT_EXTENDED
+        - NETWORK_AUTHENTICATION_REQUIRED
+        - CONNECTION_TIMED_OUT
+    AnyObject:
+      type: object
+      description: Any object, may have arbitrary attributes
+      examples:
+        - '{ "code": "CODE", message: "A text message" }'
+    ValidationError:
+      required:
+        - key
+        - message
+      type: object
+      properties:
+        key:
+          type: string
+        message:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/AnyObject'
+    Timestamp:
+      description: Timestamp (yyyy-MM-dd'T'HH:mm:ss.SSSZ)
+      type: string
+      format: date-time
+      examples:
+        - '2022-06-15T10:31:00.282Z'
+    ErrorResult:
+      required:
+        - httpStatus
+        - message
+        - name
+        - recoverable
+        - service
+        - validationErrors
+      type: object
+      properties:
+        httpStatus:
+          $ref: '#/components/schemas/HttpStatus'
+        message:
+          type: string
+          description: |
+            An error message.
+        validationErrors:
+          type: array
+          description: |
+            The validation errors
+          items:
+            $ref: '#/components/schemas/ValidationError'
+        name:
+          type: string
+          description: |
+            The name of an exception.
+        service:
+          type: string
+          description: |
+            The service which produces an exception.
+        recoverable:
+          type: boolean
+          description: |
+            Possibility of recoverable from exception.
+        recoverableAfter:
+          type: integer
+          format: int64
+          description: |
+            The time in millis to another attempt.
+        recoverableAttempts:
+          type: integer
+          format: int64
+          description: |
+            Count of possible attempts.
+        correlationId:
+          type: string
+          format: uuid
+          description: |
+            The correlation identifier of request.
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    ContactingChannel:
+      type: string
+      enum:
+        - POS
+        - ONLINE
+    Mode:
+      type: string
+      enum:
+        - NONBINDING
+        - BINDING
+    DecisionTrace:
+      properties:
+        decisionId:
+          examples:
+            - 7828ddee-0d0a-48a5-92b5-1cd33b755acf0
+          type: string
+        executedRulesetPath:
+          examples:
+            - /eu_onecop_pricing/1.0/pricing/1.3
+          type: string
+        executionDate:
+          examples:
+            - 2023-02-20T17:36:08.955+0000
+          type: string
+        requestedRulesetPath:
+          examples:
+            - /eu_onecop_pricing/pricing
+          type: string
+      type: object
+    Code:
+      type: string
+      examples:
+        - BAUFISCHUTZ
+    ExtraPremiumAmount:
+      type: object
+      properties:
+        amount:
+          $ref: '#/components/schemas/Money'
+    TaxType:
+      type: string
+      enum:
+        - IPS
+        - CLEA
+        - CONSORCIO
+        - INSURANCE_TAX
+    Tax:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/TaxType'
+        amount:
+          $ref: '#/components/schemas/Money'
+        percentage:
+          type: number
+    FeeType:
+      type: string
+      enum:
+        - ACQUISITION_COSTS
+        - RUNNING_COSTS
+        - MANAGEMENT_COSTS
+    Fee:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FeeType'
+        amount:
+          $ref: '#/components/schemas/Money'
+    AdditionalAmountType:
+      type: string
+      enum:
+        - SURRENDER_VALUE
+        - SURRENDER_VALUE_GROSS_OF_COSTS
+        - CANCELLATION_CHARGE
+        - NON_CONTRIBUTED_INSURED_SUM
+        - INSURED_SUM
+    AdditionalAmount:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/AdditionalAmountType'
+        amount:
+          $ref: '#/components/schemas/Money'
+    Risk:
+      type: string
+      enum:
+        - TD
+        - IU
+        - DD
+        - D
+        - C
+        - TPD
+        - PPD
+        - MPD
+        - TC
+        - ILL
+        - H
+        - EUI
+        - MB
+        - JT
+        - CATA
+        - ADA
+        - GP
+        - DI
+        - TH
+        - FU
+        - ONL
+        - EMBD
+        - GBD
+        - ATMR
+      examples:
+        - IU
+    PremiumResponse:
+      properties:
+        validityStartDate:
+          $ref: '#/components/schemas/Date'
+        grossAmount:
+          $ref: '#/components/schemas/Money'
+        netAmount:
+          $ref: '#/components/schemas/Money'
+        extraPremiums:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtraPremiumAmount'
+        taxes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tax'
+        fees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fee'
+        additionalAmounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalAmount'
+    CoverPricingResponse:
+      properties:
+        risk:
+          $ref: '#/components/schemas/Risk'
+        premiumFrequency:
+          $ref: '#/components/schemas/Frequency'
+        insuredAmount:
+          $ref: '#/components/schemas/Money'
+        insuredYear:
+          type: number
+          description: Identifier of the year of the insurance
+        premium:
+          $ref: '#/components/schemas/PremiumResponse'
+      type: object
+    Commission:
+      type: object
+      properties:
+        upfrontCommission:
+          $ref: '#/components/schemas/Money'
+        runningCommission:
+          $ref: '#/components/schemas/Money'
+    PricingResponse:
+      description: Response for the execution of the decision service operation. Contains notably the output parameters that are returned by the execution.
+      properties:
+        decisionTrace:
+          $ref: '#/components/schemas/DecisionTrace'
+        code:
+          $ref: '#/components/schemas/Code'
+        contactingChannel:
+          $ref: '#/components/schemas/ContactingChannel'
+        totalPremium:
+          properties:
+            validityStartDate:
+              $ref: '#/components/schemas/Date'
+            premiumFrequency:
+              $ref: '#/components/schemas/Frequency'
+            grossAmount:
+              $ref: '#/components/schemas/Money'
+            netAmount:
+              $ref: '#/components/schemas/Money'
+            extraPremiums:
+              type: array
+              items:
+                $ref: '#/components/schemas/ExtraPremiumAmount'
+            taxes:
+              type: array
+              items:
+                $ref: '#/components/schemas/Tax'
+            fees:
+              type: array
+              items:
+                $ref: '#/components/schemas/Fee'
+            additionalAmounts:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdditionalAmount'
+        covers:
+          description: list of risks and premiums
+          items:
+            $ref: '#/components/schemas/CoverPricingResponse'
+          type: array
+        commission:
+          $ref: '#/components/schemas/Commission'
+      type: object
+    coverPackage:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Package code
+          maxLength: 50
+          example: BAUFISHUTZ_BASIS
+    NonBindingQuotation:
+      type: object
+      properties:
+        requestId:
+          $ref: '#/components/schemas/Uuid'
+        id:
+          $ref: '#/components/schemas/ID'
+          examples:
+            - Q-ABAC51636C
+        createdTimestamp:
+          $ref: '#/components/schemas/Timestamp'
+        contactingChannel:
+          $ref: '#/components/schemas/ContactingChannel'
+        mode:
+          $ref: '#/components/schemas/Mode'
+        validToDate:
+          $ref: '#/components/schemas/Date'
+        insuranceStartDate:
+          $ref: '#/components/schemas/Date'
+        insuranceEndDate:
+          $ref: '#/components/schemas/Date'
+        pricing:
+          $ref: '#/components/schemas/PricingResponse'
+        coverPackage:
+          $ref: '#/components/schemas/coverPackage'
+    NonBindingQuotationResponse:
+      type: object
+      properties:
+        quotation:
+          $ref: '#/components/schemas/NonBindingQuotation'
+        prospect:
+          $ref: '#/components/schemas/ProspectResponseEntity'
+        provider:
+          $ref: '#/components/schemas/Provider'
+        partner:
+          $ref: '#/components/schemas/Partner'
+        advisor:
+          $ref: '#/components/schemas/Advisor'
+    BindingFlow:
+      type: string
+      enum:
+        - STAGED
+        - DIRECT
+    UWEvaluationStatus:
+      type: string
+      enum:
+        - CREATED
+        - IN_ANALYSIS
+        - ACCEPTED
+        - REJECTED
+    ExclusionNature:
+      description: 'Nature of exclusion: claim origin event or pathology. Only used when exclusion type is coded exclusion.'
+      type: string
+      enum:
+        - CLAIM_ORIGIN_EVENT
+        - PATHOLOGY
+    ExcludedOriginEventSubject:
+      type: string
+      enum:
+        - AVIATION
+        - MARTIAL_ARTS
+        - DIVING
+        - MOUNTAINEERING
+        - EQUESTRIAN
+        - MOTORSPORT
+        - N/A
+    ExcludedOriginEventType:
+      type: string
+      enum:
+        - SPORT
+    ParticularExclusion:
+      description: Information about exclusions for different risks within the given underwriting evaluation
+      type: object
+      properties:
+        exclusionNature:
+          $ref: '#/components/schemas/ExclusionNature'
+        excludedOriginEventSubject:
+          $ref: '#/components/schemas/ExcludedOriginEventSubject'
+        excludedOriginEventType:
+          $ref: '#/components/schemas/ExcludedOriginEventType'
+    RiskExclusion:
+      type: object
+      properties:
+        risk:
+          $ref: '#/components/schemas/Risk'
+        particularExclusions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParticularExclusion'
+    EvaluationReference:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        status:
+          description: Status of underwriting evaluation case study
+          $ref: '#/components/schemas/UWEvaluationStatus'
+        exclusions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskExclusion'
+    BindingQuotation:
+      type: object
+      properties:
+        requestId:
+          $ref: '#/components/schemas/Uuid'
+        id:
+          $ref: '#/components/schemas/ID'
+        nonBindingQuotationId:
+          $ref: '#/components/schemas/ID'
+        createdTimestamp:
+          $ref: '#/components/schemas/Timestamp'
+        contactingChannel:
+          $ref: '#/components/schemas/ContactingChannel'
+        mode:
+          $ref: '#/components/schemas/Mode'
+        bindingFlow:
+          $ref: '#/components/schemas/BindingFlow'
+        validToDate:
+          $ref: '#/components/schemas/Date'
+        insuranceStartDate:
+          $ref: '#/components/schemas/Date'
+        insuranceEndDate:
+          $ref: '#/components/schemas/Date'
+        pricing:
+          $ref: '#/components/schemas/PricingResponse'
+        coverPackage:
+          $ref: '#/components/schemas/coverPackage'
+        underwriting:
+          $ref: '#/components/schemas/EvaluationReference'
+    BindingQuotationResponse:
+      type: object
+      properties:
+        quotation:
+          $ref: '#/components/schemas/BindingQuotation'
+        prospect:
+          $ref: '#/components/schemas/ProspectResponseEntity'
+        provider:
+          $ref: '#/components/schemas/Provider'
+        partner:
+          $ref: '#/components/schemas/Partner'
+        advisor:
+          $ref: '#/components/schemas/Advisor'
+    NonBindingQuotationRequest:
+      type: object
+      properties:
+        requestId:
+          $ref: '#/components/schemas/Uuid'
+        mode:
+          $ref: '#/components/schemas/Mode'
+        insuranceStartDate:
+          $ref: '#/components/schemas/Date'
+        insuranceEndDate:
+          $ref: '#/components/schemas/Date'
+        contactingChannel:
+          $ref: '#/components/schemas/ContactingChannel'
+        pricing:
+          $ref: '#/components/schemas/PricingResponse'
+        coverPackage:
+          $ref: '#/components/schemas/coverPackage'
+      required:
+        - requestId
+        - mode
+        - insuranceStartDate
+        - insuranceEndDate
+        - contactingChannel
+        - pricing
+    BindingQuotationStagedRequest:
+      type: object
+      properties:
+        requestId:
+          $ref: '#/components/schemas/Uuid'
+        mode:
+          $ref: '#/components/schemas/Mode'
+        bindingFlow:
+          $ref: '#/components/schemas/BindingFlow'
+        insuranceStartDate:
+          $ref: '#/components/schemas/Date'
+        insuranceEndDate:
+          $ref: '#/components/schemas/Date'
+        nonBindingQuotationId:
+          $ref: '#/components/schemas/ID'
+        pricing:
+          $ref: '#/components/schemas/PricingResponse'
+        coverPackage:
+          $ref: '#/components/schemas/coverPackage'
+        underwriting:
+          $ref: '#/components/schemas/EvaluationReference'
+      required:
+        - requestId
+        - mode
+        - bindingFlow
+        - pricing
+        - nonBindingQuotationId
+    BindingQuotationDirectRequest:
+      type: object
+      properties:
+        requestId:
+          $ref: '#/components/schemas/Uuid'
+        mode:
+          $ref: '#/components/schemas/Mode'
+        bindingFlow:
+          $ref: '#/components/schemas/BindingFlow'
+        insuranceStartDate:
+          $ref: '#/components/schemas/Date'
+        insuranceEndDate:
+          $ref: '#/components/schemas/Date'
+        contactingChannel:
+          $ref: '#/components/schemas/ContactingChannel'
+        pricing:
+          $ref: '#/components/schemas/PricingResponse'
+        coverPackage:
+          $ref: '#/components/schemas/coverPackage'
+        underwriting:
+          $ref: '#/components/schemas/EvaluationReference'
+      required:
+        - requestId
+        - mode
+        - bindingFlow
+        - insuranceStartDate
+        - insuranceEndDate
+        - contactingChannel
+        - pricing
+    CompositeID:
+      type: string
+      examples:
+        - P-F8AC51636C_Q-FBA646EC61
+      pattern: ^[A-Z]{1}-[0-9A-F]{10}_[A-Z]{1}-[0-9A-F]{10}$
+      description: composite id merged from two IDs
+  parameters:
+    X-Correlation-Id:
+      name: X-Correlation-Id
+      in: header
+      required: true
+      style: simple
+      explode: false
+      description: unique identifier of the api call - tech.
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    Partner:
+      name: partner
+      in: header
+      required: true
+      style: simple
+      explode: false
+      description: identifier of a partner
+      schema:
+        type: string
+        examples:
+          - INTERCAPITAL
+  examples:
+    MissingPartnerCode:
+      value:
+        httpStatus: BAD_REQUEST
+        name: MissingPartnerCode
+        service: cop-quotation
+        recoverable: false
+        correlationId: 6b32b8fa-6b90-4a3f-aad8-d7b029310b1b
+        message: Required parameter is missing.
+        validationErrors:
+          - key: '{header}.PartnerCode'
+            message: must not be blank
+    MissingX-Correlation-Id:
+      value:
+        httpStatus: BAD_REQUEST
+        name: MissingX-Correlation-Id
+        service: cop-quotation
+        recoverable: false
+        correlationId: 6b32b8fa-6b90-4a3f-aad8-d7b029310b1b
+        message: Required parameter is missing.
+        validationErrors:
+          - key: '{header}.X-Correlation-Id'
+            message: must not be blank
+    NotFound:
+      value:
+        httpStatus: NOT_FOUND
+        name: NotFound
+        service: cop-quotation
+        recoverable: false
+        correlationId: 6b32b8fa-6b90-4a3f-aad8-d7b029310b1b
+        message: Quotation not found
+        validationErrors:
+          - key: quotationId
+            message: quotationId not found
+    MissingRequiredAttribute:
+      value:
+        httpStatus: BAD_REQUEST
+        name: MissingRequiredAttribute
+        service: cop-quotation
+        recoverable: false
+        correlationId: 6b32b8fa-6b90-4a3f-aad8-d7b029310b1b
+        message: Required attribute is missing
+        validationErrors:
+          - key: '{attribute}'
+            message: '{attribute} must not be null'

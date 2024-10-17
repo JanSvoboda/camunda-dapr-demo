@@ -1,0 +1,40 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: find-customer
+spec:
+  type: bindings.zeebe.jobworker
+  version: v1
+  metadata:
+    - name: gatewayAddr
+      value: "camunda-platform-zeebe-gateway.camunda-platform.svc.cluster.local:26500"
+    - name: gatewayKeepAlive
+      value: "45s"
+    - name: usePlainTextConnection
+      value: "true"
+    - name: caCertificatePath
+      value: "/tmp/certificates/myCA.pem"
+    - name: workerName
+      value: "find-customer"
+    - name: workerTimeout
+      value: "5m"
+    - name: requestTimeout
+      value: "15s"
+    - name: jobType
+      value: "find-customer"
+    - name: maxJobsActive
+      value: "32"
+    - name: concurrency
+      value: "4"
+    - name: pollInterval
+      value: "100ms"
+    - name: pollThreshold
+      value: "0.3"
+    - name: fetchVariables
+      value: "id, header"
+    - name: autocomplete
+      value: "false"
+    - name: retryBackOff
+      value: "10s"
+    - name: direction
+      value: "input"
