@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="c298ddd" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.5.0" camunda:diagramRelationId="52577d1d-ec39-44cd-8879-366f545623f9">
+  <bpmn:process id="register-customer" name="register-customer" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>Flow_1e4gxwn</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1e4gxwn" sourceRef="StartEvent_1" targetRef="Activity_0ndr2gy" />
+    <bpmn:serviceTask id="Activity_0ndr2gy" name="find customer">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="find-customer" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1e4gxwn</bpmn:incoming>
+      <bpmn:outgoing>Flow_1cpw0bu</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_13vr3yw">
+      <bpmn:incoming>Flow_1cpw0bu</bpmn:incoming>
+      <bpmn:incoming>Flow_1i05eg8</bpmn:incoming>
+      <bpmn:incoming>Flow_0n7pprs</bpmn:incoming>
+      <bpmn:outgoing>Flow_1pekp0a</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1f2a5al</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_1cpw0bu" sourceRef="Activity_0ndr2gy" targetRef="Gateway_13vr3yw" />
+    <bpmn:sequenceFlow id="Flow_1pekp0a" sourceRef="Gateway_13vr3yw" targetRef="Activity_0n41odk">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=not(is defined(customer))</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:serviceTask id="Activity_0n41odk" name="register customer">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="register-customer" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;test&#34;" target="test" />
+          <zeebe:output source="=customer" target="new_customer" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1pekp0a</bpmn:incoming>
+      <bpmn:outgoing>Flow_08aqhu8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_1f2a5al" sourceRef="Gateway_13vr3yw" targetRef="Activity_1lp3lv1">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=is defined(customer)</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:exclusiveGateway id="Gateway_0jqx7wo">
+      <bpmn:incoming>Flow_08aqhu8</bpmn:incoming>
+      <bpmn:incoming>Flow_0ccpqlk</bpmn:incoming>
+      <bpmn:outgoing>Flow_0dak2xi</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_08aqhu8" sourceRef="Activity_0n41odk" targetRef="Gateway_0jqx7wo" />
+    <bpmn:sequenceFlow id="Flow_0ccpqlk" sourceRef="Activity_1lp3lv1" targetRef="Gateway_0jqx7wo" />
+    <bpmn:scriptTask id="Activity_1lp3lv1" name="rename customer">
+      <bpmn:extensionElements>
+        <zeebe:script expression="=&#34;renamed&#34;" resultVariable="firstName" />
+        <zeebe:ioMapping>
+          <zeebe:output source="=firstName" target="customer.firstName" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1f2a5al</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ccpqlk</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:endEvent id="Event_0qtv5mk">
+      <bpmn:incoming>Flow_0vak72g</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:boundaryEvent id="catch-all" name="catch-all" attachedToRef="Activity_0ndr2gy">
+      <bpmn:outgoing>Flow_1i05eg8</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_03o5yu4" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_1i05eg8" sourceRef="catch-all" targetRef="Gateway_13vr3yw" />
+    <bpmn:boundaryEvent id="customer-not-found" name="customer-not-found" attachedToRef="Activity_0ndr2gy">
+      <bpmn:outgoing>Flow_0n7pprs</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_0vsrfa6" errorRef="Error_1kz5nut" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_0n7pprs" sourceRef="customer-not-found" targetRef="Gateway_13vr3yw" />
+    <bpmn:sequenceFlow id="Flow_0vak72g" sourceRef="Activity_1f40e1p" targetRef="Event_0qtv5mk" />
+    <bpmn:sendTask id="Activity_1f40e1p" name="send-customer">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-customer" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0dak2xi</bpmn:incoming>
+      <bpmn:outgoing>Flow_0vak72g</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:sequenceFlow id="Flow_0dak2xi" sourceRef="Gateway_0jqx7wo" targetRef="Activity_1f40e1p" />
+  </bpmn:process>
+  <bpmn:error id="Error_1kz5nut" name="customer-not-found" errorCode="customer-not-found" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="register-customer">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="152" y="82" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0ktoukx_di" bpmnElement="Activity_0ndr2gy">
+        <dc:Bounds x="240" y="60" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_13vr3yw_di" bpmnElement="Gateway_13vr3yw" isMarkerVisible="true">
+        <dc:Bounds x="465" y="75" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_112ih0e_di" bpmnElement="Activity_0n41odk">
+        <dc:Bounds x="570" y="60" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0jqx7wo_di" bpmnElement="Gateway_0jqx7wo" isMarkerVisible="true">
+        <dc:Bounds x="725" y="75" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_07e8mg4_di" bpmnElement="Activity_1lp3lv1">
+        <dc:Bounds x="570" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0qtv5mk_di" bpmnElement="Event_0qtv5mk">
+        <dc:Bounds x="1112" y="82" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0qaj8yc_di" bpmnElement="Activity_1f40e1p">
+        <dc:Bounds x="890" y="60" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0nte7jx_di" bpmnElement="customer-not-found">
+        <dc:Bounds x="252" y="122" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="236" y="165" width="68" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0icngvr_di" bpmnElement="catch-all">
+        <dc:Bounds x="302" y="122" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="303" y="165" width="41" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1e4gxwn_di" bpmnElement="Flow_1e4gxwn">
+        <di:waypoint x="188" y="100" />
+        <di:waypoint x="240" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1cpw0bu_di" bpmnElement="Flow_1cpw0bu">
+        <di:waypoint x="340" y="100" />
+        <di:waypoint x="465" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1pekp0a_di" bpmnElement="Flow_1pekp0a">
+        <di:waypoint x="515" y="100" />
+        <di:waypoint x="570" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1f2a5al_di" bpmnElement="Flow_1f2a5al">
+        <di:waypoint x="490" y="125" />
+        <di:waypoint x="490" y="210" />
+        <di:waypoint x="570" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_08aqhu8_di" bpmnElement="Flow_08aqhu8">
+        <di:waypoint x="670" y="100" />
+        <di:waypoint x="725" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ccpqlk_di" bpmnElement="Flow_0ccpqlk">
+        <di:waypoint x="670" y="210" />
+        <di:waypoint x="750" y="210" />
+        <di:waypoint x="750" y="125" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1i05eg8_di" bpmnElement="Flow_1i05eg8">
+        <di:waypoint x="320" y="158" />
+        <di:waypoint x="320" y="178" />
+        <di:waypoint x="428" y="178" />
+        <di:waypoint x="428" y="100" />
+        <di:waypoint x="465" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0n7pprs_di" bpmnElement="Flow_0n7pprs">
+        <di:waypoint x="270" y="158" />
+        <di:waypoint x="270" y="240" />
+        <di:waypoint x="430" y="240" />
+        <di:waypoint x="430" y="100" />
+        <di:waypoint x="465" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0vak72g_di" bpmnElement="Flow_0vak72g">
+        <di:waypoint x="990" y="100" />
+        <di:waypoint x="1112" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0dak2xi_di" bpmnElement="Flow_0dak2xi">
+        <di:waypoint x="775" y="100" />
+        <di:waypoint x="890" y="100" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
